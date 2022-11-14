@@ -1,10 +1,14 @@
 import useInput from '@hooks/useInput';
+import fetcher from '@utils/fetcher';
 import React, { useCallback, useState, VFC } from 'react';
 import axios from 'axios';
+import useSWR from 'swr';
 import { Success, Form, Error, Label, Input, LinkContainer, Button, Header } from './styles';
 import { Link, Redirect } from 'react-router-dom';
 
 const SignUp = () => {
+  const { data, error, mutate } = useSWR('/api/users', fetcher);
+
   const [email, onChangeEmail] = useInput('');
   const [nickname, onChangeNickname] = useInput('');
   const [password, , setPassword] = useInput('');
@@ -32,11 +36,8 @@ const SignUp = () => {
   const onSubmit = useCallback(
     (e) => {
       e.preventDefault();
-      console.log(email, nickname, password, passwordCheck);
-      if (!mismatchError) {
+      if (!mismatchError && nickname) {
         console.log('서버로 회원가입하기');
-        //요청 보내기전에 초기화 (연속으로 날리는 경우 있음)
-        //로딩
         setSignUpError('');
         setSignUpSuccess(false);
         axios
@@ -46,12 +47,10 @@ const SignUp = () => {
             password,
           })
           .then((response) => {
-            //성공
             console.log(response);
             setSignUpSuccess(true);
           })
           .catch((error) => {
-            //실패
             console.log(error.response);
             setSignUpError(error.response.data);
           })
@@ -60,6 +59,14 @@ const SignUp = () => {
     },
     [email, nickname, password, passwordCheck, mismatchError],
   );
+
+  if (data === undefined) {
+    return <div>로딩중...</div>;
+  }
+
+  if (data) {
+    return <Redirect to="/workspace/sleact/channel/일반" />;
+  }
 
   return (
     <div id="container">
